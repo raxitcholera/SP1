@@ -17,7 +17,7 @@ if(!isset($page_name)) {
 
   <link rel="shortcut icon" href="img/favicon/favicon.ico" />
 
-  <title>PM&amp;O / Group 1</title>
+  <title><?php echo $page_name; ?> - PM&amp;O / Group 1</title>
   
   <!-- CSS for Data Table
 	<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/jquery.dataTables.css"> -->

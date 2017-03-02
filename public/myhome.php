@@ -34,7 +34,10 @@
 
 
             <li class="list-group-item">
-              <span class="badge">14</span>
+              <?php
+                $cnt = getCount("pmo_stock", array("pid" => $portfolio["pid"]));
+              ?>
+              <span class="badge"><?php echo $cnt;?></span>
               <a href="viewportfolio.php?pid=<?php echo $portfolio["pid"]?>">
                 <?php echo $portfolio["portfolio_name"]?>
               </a>

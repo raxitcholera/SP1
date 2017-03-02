@@ -24,7 +24,7 @@ $pagination_color= array(
 
 // Redirect Page to URI
 function redirectTo($page) {
-	$host  = $_SERVER['HTTP_HOST'];
+  $host  = $_SERVER['HTTP_HOST'];
   $uri   = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
   header("Location: http://$host$uri/$page");
   ob_end_flush();
@@ -150,4 +150,81 @@ function isValidUser($username, $password) {
 		} 
 	}
 	return false;
+}
+
+
+// Get Current Stock Price
+function currentStockPrice($ticker, $exchange) {
+	$arrContextOptions=array(
+    	"ssl"=>array(
+    	    "verify_peer"=>false,
+        	"verify_peer_name"=>false,
+        ),
+	);
+
+	$xml = "http://finance.google.com/finance/info?client=ig&q=" . $exchange . ":" . $ticker;
+	
+	$json = file_get_contents($xml, true, stream_context_create($arrContextOptions));
+	$json = substr($json, 4);
+	$array = json_decode($json,TRUE);
+	$result = $array[0];
+	return $result;
+}
+
+// Get Current Stock Price
+function currentExchange($combo) {
+	$arrContextOptions=array(
+    	"ssl"=>array(
+    	    "verify_peer"=>false,
+        	"verify_peer_name"=>false,
+        ),
+	);
+
+	
+
+	$xml = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20(%22" . $combo . "%22)&diagnostics=true&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+	//echo $xml;
+	$json = file_get_contents($xml, true, stream_context_create($arrContextOptions));
+	//$json = substr($json, 4);
+	$array = json_decode($json,TRUE);
+	//var_dump($array);
+	$result = $array["query"]["results"]["rate"]["Rate"];
+	return $result;
+}
+
+// Get Stock Price for a specific date range
+function historicalStockPrice($ticker, $exchange, $start, $end) {
+	$arrContextOptions=array(
+    	"ssl"=>array(
+    	    "verify_peer"=>false,
+        	"verify_peer_name"=>false,
+        ),
+	);
+
+	if($exchange == "NSE"){
+		$ticker = $ticker . ".NS";
+	}
+
+	$hendDate = $end; 
+	$hstartDate = $start; 
+
+	$url = "https://query.yahooapis.com/v1/public/yql?q=";
+	$url.= urlencode("select * from yahoo.finance.historicaldata where symbol =\"" . $ticker . "\" and startDate=\"" . $hstartDate . "\" and endDate=\"". $hendDate . "\"");
+	$url.= "&format=json&diagnostics=true&env=";
+	$url.= urlencode("store://datatables.org/alltableswithkeys");
+	$url.= "&callback=";
+	
+	
+	$hjson = file_get_contents($url, true, stream_context_create($arrContextOptions));
+	
+	$harray = json_decode($hjson,TRUE);
+	
+	if($harray["query"]["count"] == 1){
+		$result[0] = $harray["query"]["results"]["quote"];	
+	} else {
+		$result = $harray["query"]["results"]["quote"];	
+	}
+
+	
+	return $result;
 }

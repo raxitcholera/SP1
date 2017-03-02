@@ -27,7 +27,7 @@ if($query_params["cnt"] == 1 && isset($query_params["pid"])){
   <div class="row">
     <div class="col-lg-12">
       <div class="btn-group" role="group" aria-label="cashtx">
-        <a class="btn btn-success">Buy Stocks</a> 
+        <a href="buystocks.php?pid=<?php echo $portfolio["pid"] ?>" class="btn btn-success">Buy Stocks</a> 
         <a class="btn btn-success">Sell Stocks</a> 
         <a href="addcash.php?pid=<?php echo $portfolio["pid"] ?>" class="btn btn-primary">Add Cash</a> 
         <a href="withdrawcash.php?pid=<?php echo $portfolio["pid"] ?>" class="btn btn-primary">Withdraw Cash</a>
@@ -51,110 +51,193 @@ if($query_params["cnt"] == 1 && isset($query_params["pid"])){
               <th class="text-right">Shares</th>
               <th class="text-right">Cost basis</th>
               <th class="text-right">Mkt value</th>
+              <th class="text-right">Cost basis (USD)</th>
+              <th class="text-right">Mkt value (USD)</th>
               <th class="text-right">Gain</th>
               <th class="text-right">Gain %</th>
+              
             </tr>
           </thead>
           <tbody>
-            <?php for($i= 0; $i < 5; $i++) { ?>
+            <?php 
+              $totalCostBasis = 0;
+              $totalMV = 0;
+              $totalGain = 0;
+              $totalQty = 0;
+
+              $stocks = getAll("pmo_stock", array("pid" => $query_params["pid"]), "ticker", "asc");
+             
+             ?>
+            <?php foreach($stocks as $stock) { ?>
+            <?php
+             $exchange = getById("pmo_stocklist", "ticker", $stock["ticker"])["exchange"];
+              if($exchange == "NSE"){
+                $currency = "&#8377; ";
+                $currencyRate = currentExchange("INRUSD");
+              } else {
+                $currency = "$ ";
+                $currencyRate = 1;
+              }
+            ?>
             <tr>
               <td>
-                Yahoo! Inc
+                <?php echo $stock["stockname"]?>
               </td>
               <td>
-                YHOO
+                <?php echo $stock["ticker"]?>
               </td>
               <td class="text-right">
-                45.55
+                <?php
+                  $price = currentStockPrice($stock["ticker"], $exchange);
+                  $price = str_replace(",", "", $price);
+                  echo $currency . $price["l"]; 
+                ?>
               </td>
               <td class="text-right">
-                +0.14(0.31%)
+                <?php echo $price["c"]?> (<?php echo $price["cp"]?>%)
               </td>
               <td class="text-right">
-                150.00
+                <?php 
+                  echo number_format($stock["qty"], 2);
+                  $totalQty += intval($stock["qty"]);
+                ?>
+
               </td>
               <td class="text-right">
-                6,416.50
+                <?php
+                  echo $currency . number_format($stock["costbasis"], 2);
+                  // $totalCostBasis += floatval($stock["costbasis"]);
+                ?>
               </td>
               <td class="text-right">
-                6,832.50
+                <?php 
+                  $mv = floatval($stock["qty"] * $price["l"]);
+                  // $totalMV += floatval($mv);
+                  echo $currency . number_format($mv, 2);
+                ?>
+              </td>
+
+              <td class="text-right">
+                <?php
+                  echo "$ " . number_format($stock["costbasisusd"], 2);
+                  $totalCostBasis += floatval($stock["costbasisusd"]);
+                ?>
               </td>
               <td class="text-right">
-                +416.00
+                <?php 
+                  
+                  $mvd = $mv * $currencyRate;
+                  $totalMV += floatval($mvd);
+                  echo "$ " . number_format($mvd, 2);
+                ?>
+              </td>
+              
+
+              <td class="text-right">
+                <?php 
+                  $gain = floatval($mvd - $stock["costbasisusd"]);
+                  $totalGain += floatval($gain);
+                  echo "$ " . number_format($gain, 2);
+                ?>
               </td>
               <td class="text-right">
-                +6.48%
+                <?php 
+                  echo number_format(($gain / $stock["costbasisusd"])*100, 2);
+                ?>%
               </td>
               
               
             </tr>
             <?php } ?>
 
-            <!-- Cash -->
-            <tr>
-              <td>
-                Cash
-              </td>
-              <td>
+            <?php if($totalQty > 0){ ?>
+              <!-- Cash -->
+              <tr class="warning">
+                <td>
+                  Cash
+                </td>
+                <td>
+                  
+                </td>
+                <td class="text-right">
+                  $<?php echo number_format($portfolio["portfolio_cash"], 2)?>
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  $ <?php 
+                    echo number_format($portfolio["portfolio_cash"], 2);
+                    $totalMV += floatval($portfolio["portfolio_cash"]);
+                  ?>
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
                 
-              </td>
-              <td class="text-right">
-                $13,583.50
-              </td>
-              <td class="text-right">
                 
-              </td>
-              <td class="text-right">
-                
-              </td>
-              <td class="text-right">
-                
-              </td>
-              <td class="text-right">
-                $13,583.50
-              </td>
-              <td class="text-right">
-                
-              </td>
-              <td class="text-right">
-                
-              </td>
-              
-              
-            </tr>
+              </tr>
 
-            <!-- Total -->
-            <tr class="info">
-              <td>
-                Portfolio Value
-              </td>
-              <td>
+            
+              <!-- Total -->
+              <tr class="info">
+                <td>
+                  Portfolio Value
+                </td>
+                <td>
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  <?php echo number_format($totalQty, 2);?>
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  
+                </td>
+                <td class="text-right">
+                  <?php echo "$ " . number_format($totalCostBasis, 2);?>
+                </td>
+                <td class="text-right">
+                  <?php echo "$ " . number_format($totalMV, 2);?>
+                </td>
+                <td class="text-right">
+                  <?php echo "$ " . number_format($totalGain, 2);?>
+                </td>
+                <td class="text-right">
+                  <?php 
+                    if($totalCostBasis > 0){
+                      echo number_format(floatval(($totalGain / $totalCostBasis)*100), 2);  
+                    }
+                  ?>%
+                </td>
                 
-              </td>
-              <td class="text-right">
                 
-              </td>
-              <td class="text-right">
-                +21(0.10%)
-              </td>
-              <td class="text-right">
                 
-              </td>
-              <td class="text-right">
-                $6,416.50
-              </td>
-              <td class="text-right">
-                $20,416.00
-              </td>
-              <td class="text-right">
-                +$416.00
-              </td>
-              <td class="text-right">
-                +6.48%
-              </td>
-              
-              
-            </tr>
+              </tr>
+            <?php } ?>
           </tbody>
         </table>
       </div>
